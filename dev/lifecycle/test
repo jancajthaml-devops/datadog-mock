@@ -1,0 +1,14 @@
+#!/bin/bash
+
+set -eo pipefail
+trap exit INT TERM
+
+####
+
+printf "[info] starting tests\n"
+
+cd /go/src/datadog-mock
+
+go test -v ./...
+
+printf "[info] done\n"
