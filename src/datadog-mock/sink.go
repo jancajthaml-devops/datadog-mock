@@ -28,7 +28,7 @@ func (r *sink) Run(addr *net.UDPAddr) {
 	inputStreamConn, err := net.ListenUDP("udp", addr)
 
 	if err != nil {
-		fmt.Println("Fatal: %v", err)
+		fmt.Println(err)
 		os.Exit(1)
 	}
 
@@ -39,7 +39,7 @@ func (r *sink) Run(addr *net.UDPAddr) {
 forever:
 	n, _, err := inputStreamConn.ReadFromUDP(buf)
 	if err != nil {
-		fmt.Println("Error: %v", err)
+		fmt.Println(err)
 		goto forever
 	}
 

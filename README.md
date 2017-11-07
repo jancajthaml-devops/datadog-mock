@@ -1,44 +1,35 @@
 # DataDog Server mock
 
-2MB golang server listening on port 8125 writing metrics to stdout.
+golang server listening on port 8125 writing metrics to stdout. (datadog/mock 3.02MB)
 
 ### Bootstrap
 
-```
-make install
-make test
-```
+Require docker to assembly
+
+`make install test`
 
 ### Running
 
-```
-make run
-```
+automagically
 
-or
+`make run`
 
-```
-docker run -it --log-driver none --rm -p 0.0.0.0:8125:8125/UDP datadog/mock
-```
+run in docker
 
-or
+`docker run -it --log-driver none --rm -p 0.0.0.0:8125:8125/UDP datadog/mock`
 
-```
-./target/datadog_mock
-```
+run on host
+
+`./target/datadog_mock`
 
 
 ### Verify
 
-When datadog/mock is running 
+When datadog/mock is running run manually
 
-```
-echo "deploys.test.myservice:1|c" > /dev/udp/127.0.0.1/8125
-```
+`echo "deploys.test.myservice:1|c" > /dev/udp/127.0.0.1/8125`
 
-or
+or send MESSAGE repeat EACH second
 
-```
-EACH=.001 ./dev/event-producer.sh
-```
+`MESSAGE="deploys.test.myservice:1|c" EACH=.001 ./dev/event-producer.sh`
 
