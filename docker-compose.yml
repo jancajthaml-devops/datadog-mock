@@ -46,12 +46,12 @@ services:
   package:
     extends: dev
     image: datadog/dev:package
-    entrypoint: /opt/lifecycle/package
+    entrypoint: ["/opt/lifecycle/package"]
 
   test:
     extends: dev
     image: datadog/dev:sync
-    entrypoint: /opt/lifecycle/test
+    entrypoint: ["/opt/lifecycle/test"]
 
   artefact:
     restart: unless-stopped
