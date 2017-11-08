@@ -1,0 +1,83 @@
+version: 2
+
+jobs:
+  test:
+    docker:
+      - image: circleci/golang:1.9
+      
+    working_directory: /go/src/jancajthaml
+    steps:
+      - checkout
+
+      - run:
+          name: Sync dependencies
+          command: |
+            go get -u github.com/kardianos/govendor
+            go get -u golang.org/x/tools/cmd/cover
+            go get -u github.com/mattn/goveralls
+            govendor sync -v
+
+      - run:
+          name: Run tests
+          command: |
+            cd /go/src/jancajthaml/src/datadog-mock
+            : > /go/src/jancajthaml/coverage.txt
+            go test -v -cover -race -coverprofile=/go/src/jancajthaml/coverage.txt -covermode=atomic ./...
+            goveralls -coverprofile=/go/src/jancajthaml/coverage.txt -service=circle-ci -repotoken=$COVERALLS_TOKEN
+
+      - run:
+          name: Build server
+          command: |
+            cd /go/src/jancajthaml/src/datadog-mock
+            go clean
+            CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /go/src/github.com/jancajthaml/target/datadog_mock
+
+      - persist_to_workspace: 
+          root: /go/src/github.com/jancajthaml
+          paths:
+            - target/datadog_mock
+
+  deploy:
+    docker:
+      - image: docker:17.05.0-ce-git
+
+    working_directory: /app
+    steps:
+      - attach_workspace:
+          at: /go/src/github.com/jancajthaml
+
+      - checkout
+
+      - setup_remote_docker
+
+      - run:
+          name: Build application Docker image
+          command: |
+            cp -r /go/src/github.com/jancajthaml/target /app/target
+            docker build \
+              --build-arg VERSION=$(cat VERSION) \
+              --build-arg VCS_REF=${CIRCLE_SHA1} \
+              --build-arg VCS_URL=$(git config --get remote.origin.url) \
+              --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
+              -t bundle .
+
+      - run:
+          name: List images
+          command: |
+            docker images
+
+      - deploy:
+          name: Push image to DockerHUB
+          command: |
+            docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
+            docker tag bundle "jancajthaml/datadog_mock:${CIRCLE_SHA1}"
+            docker push "jancajthaml/datadog_mock:${CIRCLE_SHA1}"
+
+workflows:
+  version: 2
+  test_and_deploy:
+    jobs:
+      - test
+      - deploy:
+          requires:
+            - test

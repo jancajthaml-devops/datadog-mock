@@ -6,13 +6,23 @@ all: install test authors run
 .PHONY: install
 install: prepare-dev lint bundle
 
+.PHONY: clean
+clean:
+	@docker images | \
+	grep -i "^datadog/dev" | \
+	awk '{ print $$3 }' | \
+	xargs -P$(CORES) -I{} docker rmi -f {} 2> /dev/null || :
+
+.PHONY: perf
+perf:
+	@./dev/siege.sh
+
 .PHONY: fmt
 fmt:
 	docker-compose run --rm fmt
 
 .PHONY: sync
 sync:
-	docker-compose run --rm fetch
 	docker-compose run --rm sync
 
 .PHONY: lint

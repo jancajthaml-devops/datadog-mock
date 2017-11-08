@@ -1,13 +1,12 @@
 #!/bin/bash
 
 set -eo pipefail
-
 trap exit INT TERM
 
 ####
 
-[ -z $EACH ] && EACH=2 || :
-[ -z $MESSAGE ] && MESSAGE="deploys.test.myservice:1|c" || :
+if [ -z $EACH ]; then EACH=2; fi
+if [ -z $MESSAGE ]; then MESSAGE="deploys.test.myservice:1|c"; fi
 
 printf "[info] sending \"%s\" every %ssec\n" $MESSAGE $EACH
 
