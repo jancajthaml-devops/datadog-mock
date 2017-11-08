@@ -1,35 +1,24 @@
-# DataDog Server mock
+# datadog-mock #
 
-golang server listening on port 8125 writing metrics to stdout. (datadog/mock 3.02MB)
+datadog-mock is a golang statsd mock server listening on port 8125 and relaying events to stdout.
 
-### Bootstrap
+[![Build Status](https://circleci.com/gh/jancajthaml/datadog-mock.svg?style=svg)](https://circleci.com/gh/jancajthaml/datadog-mock) [![Static Analysis](https://api.codacy.com/project/badge/Grade/c5c255a292f84cf88972f92f74f9174d)](https://www.codacy.com/app/jan-cajthaml/datadog-mock?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=jancajthaml/datadog-mock&amp;utm_campaign=Badge_Grade) [![Test Coverage](https://coveralls.io/repos/github/jancajthaml/datadog-mock/badge.svg?branch=master)](https://coveralls.io/github/jancajthaml/datadog-mock?branch=master)
 
-Require docker to assembly
+## Getting started ##
 
-`make install test`
+Bootstrap environment with `make install test` then grab `./target/datadog_mock`
+or docker image `datadog/mock`.
 
-### Running
+## Usage ##
 
-automagically
+Run in docker with `make run` or `./target/datadog_mock` locally.
 
-`make run`
+## Testing ##
 
-run in docker
+When datadog/mock is running you can either test simple relay
+`./dev/event-producer.sh` or siege with `make perf`.
 
-`docker run -it --log-driver none --rm -p 0.0.0.0:8125:8125/UDP datadog/mock`
+## License ##
 
-run on host
-
-`./target/datadog_mock`
-
-
-### Verify
-
-When datadog/mock is running run manually
-
-`echo "deploys.test.myservice:1|c" > /dev/udp/127.0.0.1/8125`
-
-or send MESSAGE repeat EACH second
-
-`MESSAGE="deploys.test.myservice:1|c" EACH=.001 ./dev/event-producer.sh`
-
+This service is distributed under the Apache License, Version 2.0 license found
+in the [LICENSE](./LICENSE) file.

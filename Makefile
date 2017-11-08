@@ -6,6 +6,10 @@ all: install test authors run
 .PHONY: install
 install: prepare-dev lint bundle
 
+.PHONY: perf
+perf:
+	@./dev/siege.sh
+
 .PHONY: fmt
 fmt:
 	docker-compose run --rm fmt
