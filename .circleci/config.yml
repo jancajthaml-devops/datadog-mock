@@ -4,7 +4,9 @@ jobs:
   test:
     docker:
       - image: circleci/golang:1.9
-      
+        environment:
+          - LANG: C.UTF-8
+
     working_directory: /go/src/jancajthaml
     steps:
       - checkout
@@ -39,7 +41,9 @@ jobs:
 
   deploy:
     docker:
-      - image: docker:17.05.0-ce-git
+      - image: docker:17.09.0-ce-git
+        environment:
+          - LANG: C.UTF-8
 
     working_directory: /app
     steps:
@@ -54,18 +58,29 @@ jobs:
           command: |
             cp -r /go/src/github.com/jancajthaml/target /app/target
             docker build \
-              --build-arg VERSION=$(cat VERSION) \
-              --build-arg VCS_REF=${CIRCLE_SHA1} \
-              --build-arg VCS_URL=$(git config --get remote.origin.url) \
-              --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
+              --build-arg VERSION=$(git tag | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$" | sort -t. -k 1,1n -k 2,2n -k 3,3n | tail -1) \
+              --build-arg SOURCE=$(git config --get remote.origin.url) \
               -t bundle .
 
       - deploy:
           name: Push image to DockerHUB
           command: |
-            docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
-            docker tag bundle "jancajthaml/datadog_mock:${CIRCLE_SHA1}"
-            docker push "jancajthaml/datadog_mock:${CIRCLE_SHA1}"
+            docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
+
+            if git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$"; then
+              VERSION=$(git tag | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$" | sort -t. -k 1,1n -k 2,2n -k 3,3n | tail -1)
+            else
+              VERSION="snapshot.${CIRCLE_SHA1}"
+            fi
+
+            docker tag bundle "jancajthaml/datadog_mock:${VERSION}"
+            docker push "jancajthaml/datadog_mock:${VERSION}"
+
+      - deploy:
+          name: Notifying microbadger to update badges
+          command: |
+            apk --no-cache add curl
+            curl -X POST https://hooks.microbadger.com/images/jancajthaml/datadog_mock/${MICROBADGER_TOKEN}
 
 workflows:
   version: 2

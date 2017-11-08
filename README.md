@@ -10,11 +10,9 @@ datadog-mock is a golang statsd mock server listening on port 8125 and relaying 
 Bootstrap environment with `make install test` then grab `./target/datadog_mock`
 or docker image `datadog/mock`.
 
-## Usage ##
+## Testing ##
 
 Run in docker with `make run` or `./target/datadog_mock` locally.
-
-## Testing ##
 
 When datadog/mock is running you can either test simple relay
 `./dev/event-producer.sh` or siege with `make perf`.
