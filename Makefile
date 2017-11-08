@@ -1,16 +1,14 @@
 CORES := $$(getconf _NPROCESSORS_ONLN)
 
 .PHONY: all
-all: install test authors run
+all: install test run
 
 .PHONY: install
 install: prepare-dev lint bundle
 
 .PHONY: clean
 clean:
-	@docker images | \
-	grep -i "^datadog/dev" | \
-	awk '{ print $$3 }' | \
+	@docker images | grep -i "^datadog/dev" | awk '{ print $$3 }' | \
 	xargs -P$(CORES) -I{} docker rmi -f {} 2> /dev/null || :
 
 .PHONY: perf
@@ -46,7 +44,3 @@ bundle:
 .PHONY: run
 run:
 	docker-compose run --rm --no-deps --service-ports artefact
-
-.PHONY: authors
-authors:
-	@git log --format='%aN <%aE>' | sort -fu > AUTHORS
