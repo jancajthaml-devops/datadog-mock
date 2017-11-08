@@ -120,12 +120,17 @@ jobs:
           command: |
             echo ${DOCKER_PASSWORD}| docker login -u ${DOCKER_USER} --password-stdin
             if git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$"; then
+              git pull --tags
+
               VERSION=$(git tag | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$" | sort -t. -k 1,1n -k 2,2n -k 3,3n | tail -1)
 
-              docker tag bundle "jancajthaml/datadog_mock:${VERSION}"
+              echo "releasing version ${VERSION} and updating latest"
+
               docker tag bundle "jancajthaml/datadog_mock:latest"
-              docker push "jancajthaml/datadog_mock:${VERSION}"
               docker push "jancajthaml/datadog_mock:latest"
+
+              docker tag bundle "jancajthaml/datadog_mock:${VERSION}"
+              docker push "jancajthaml/datadog_mock:${VERSION}"
 
             else
               parse_git_branch() {
@@ -136,6 +141,8 @@ jobs:
                 echo ${branch##*/}
               }
               VERSION="$(parse_git_branch)"
+
+              echo "releasing snapshot ${VERSION}"
 
               docker tag bundle "jancajthaml/datadog_mock:${VERSION}"
               docker push "jancajthaml/datadog_mock:${VERSION}"
