@@ -31,13 +31,14 @@ func init() {
 
 var pattern = regexp.MustCompile(`(?P<name>.*?):(?P<value>.*?)\|(?P<type>[a-z])(?:\|#(?P<tags>.*))?`)
 
-func processEvent(event string) {
-	match := pattern.FindStringSubmatch(event)
+func processEvent(event []byte) {
+	parsed := string(event)
+	match := pattern.FindStringSubmatch(parsed)
 
 	if len(match) < 3 {
 		return
 	}
 
-	nanolog.Log(h, strings.TrimSuffix(event, "\n")+"\r\n")
+	nanolog.Log(h, strings.TrimSuffix(parsed, "\n")+"\r\n")
 	nanolog.Flush()
 }

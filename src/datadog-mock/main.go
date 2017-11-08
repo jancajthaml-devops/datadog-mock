@@ -26,7 +26,7 @@ func main() {
 	stream, err := net.ResolveUDPAddr("udp", ":8125")
 
 	if err != nil {
-		fmt.Println("Fatal: %v", err)
+		fmt.Println(err)
 		os.Exit(1)
 	}
 

@@ -1,20 +1,19 @@
 #!/bin/bash
 
 set -eo pipefail
-
 trap exit INT TERM
 
 ####
-sample="deploys.test.myservice:1|c"
 
-[ -z $EACH ] && EACH=2 || :
+if [ -z $EACH ]; then EACH=2; fi
+if [ -z $MESSAGE ]; then MESSAGE="deploys.test.myservice:1|c"; fi
 
-printf "[info] sending \"%s\" every %ssec\n" $sample $EACH
+printf "[info] sending \"%s\" every %ssec\n" $MESSAGE $EACH
 
 ####
 
 while true; do
-    echo $sample > /dev/udp/127.0.0.1/8125
+    echo $MESSAGE > /dev/udp/127.0.0.1/8125
     sleep $EACH
 done
 

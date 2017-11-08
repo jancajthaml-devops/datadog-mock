@@ -15,7 +15,8 @@
 package main
 
 type sink struct {
-	event chan string
+	event chan []byte
 }
 
-const BUF_SIZE int = 1024
+// BufferSize is upper boundary of UDP recieve window
+const BufferSize int = 1024
