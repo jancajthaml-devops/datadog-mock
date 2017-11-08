@@ -16,6 +16,18 @@ FROM scratch
 
 MAINTAINER Jan Cajthaml <jan.cajthaml@gmail.com>
 
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+LABEL org.label-schema.build-date=$BUILD_DATE \
+      org.label-schema.name="datadog-mock" \
+      org.label-schema.description="DataDog mock service Edit" \
+      org.label-schema.vcs-ref=$VCS_REF \
+      org.label-schema.vcs-url="https://github.com/jancajthaml/datadog-mock" \
+      org.label-schema.vendor="Jan Cajthaml" \
+      org.label-schema.version=$VERSION \
+      org.label-schema.schema-version="1.0"
+
 COPY target/datadog_mock /datadog_mock
 
 EXPOSE 8125/UDP

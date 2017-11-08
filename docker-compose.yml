@@ -25,12 +25,6 @@ services:
     entrypoint: govendor
     command: ["sync", "-v"]
 
-  fetch:
-    extends: dev
-    image: datadog/dev:fetch
-    entrypoint: govendor
-    command: ["fetch", "github.com/ScottMansfield/nanolog"]
-
   fmt:
     extends: dev
     image: datadog/dev:fmt

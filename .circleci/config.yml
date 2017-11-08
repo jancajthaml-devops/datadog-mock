@@ -13,13 +13,17 @@ jobs:
           name: Sync dependencies
           command: |
             go get -u github.com/kardianos/govendor
+            go get -u golang.org/x/tools/cmd/cover
+            go get -u github.com/mattn/goveralls
             govendor sync -v
 
       - run:
           name: Run tests
           command: |
             cd /go/src/jancajthaml/src/datadog-mock
-            go test -v ./...
+            : > /go/src/jancajthaml/coverage.txt
+            go test -v -cover -race -coverprofile=/go/src/jancajthaml/coverage.txt -covermode=atomic ./...
+            goveralls -coverprofile=/go/src/jancajthaml/coverage.txt -service=circle-ci -repotoken=$COVERALLS_TOKEN
 
       - run:
           name: Build server
@@ -43,19 +47,18 @@ jobs:
           at: /go/src/github.com/jancajthaml
 
       - checkout
-
       - setup_remote_docker
 
       - run:
           name: Build application Docker image
           command: |
             cp -r /go/src/github.com/jancajthaml/target /app/target
-            docker build -t bundle .
-
-      - run:
-          name: List images
-          command: |
-            docker images
+            docker build \
+              --build-arg VERSION=$(cat VERSION) \
+              --build-arg VCS_REF=${CIRCLE_SHA1} \
+              --build-arg VCS_URL=$(git config --get remote.origin.url) \
+              --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
+              -t bundle .
 
       - deploy:
           name: Push image to DockerHUB
