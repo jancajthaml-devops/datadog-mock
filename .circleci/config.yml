@@ -121,6 +121,12 @@ jobs:
             echo ${DOCKER_PASSWORD}| docker login -u ${DOCKER_USER} --password-stdin
             if git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$"; then
               VERSION=$(git tag | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$" | sort -t. -k 1,1n -k 2,2n -k 3,3n | tail -1)
+
+              docker tag bundle "jancajthaml/datadog_mock:${VERSION}"
+              docker tag bundle "jancajthaml/datadog_mock:latest"
+              docker push "jancajthaml/datadog_mock:${VERSION}"
+              docker push "jancajthaml/datadog_mock:latest"
+
             else
               parse_git_branch() {
                 branch=$(git rev-parse --abbrev-ref HEAD 2> /dev/null)
@@ -130,15 +136,17 @@ jobs:
                 echo ${branch##*/}
               }
               VERSION="$(parse_git_branch)"
+
+              docker tag bundle "jancajthaml/datadog_mock:${VERSION}"
+              docker push "jancajthaml/datadog_mock:${VERSION}"
             fi
 
-            docker tag bundle "jancajthaml/datadog_mock:${VERSION}"
-            docker push "jancajthaml/datadog_mock:${VERSION}"
-
       - deploy:
-          name: Notifying microbadger to update badges
+          name: Lazily update docker badge
           command: |
-            curl -X POST https://hooks.microbadger.com/images/jancajthaml/datadog_mock/${MICROBADGER_TOKEN}
+            if git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$"; then
+              curl -X POST https://hooks.microbadger.com/images/jancajthaml/datadog_mock/${MICROBADGER_TOKEN}
+            fi
 
 workflows:
   version: 2
