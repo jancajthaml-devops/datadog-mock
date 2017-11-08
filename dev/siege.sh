@@ -20,7 +20,6 @@ trap "kill 0" EXIT
 MESSAGE="deploys.test.myservice:1|c" EACH=.0001 ./dev/event-producer.sh &> /dev/null &
 MESSAGE="deploys.test.myservice:2|c" EACH=.0001 ./dev/event-producer.sh &> /dev/null &
 MESSAGE="deploys.test.myservice:3|c" EACH=.0001 ./dev/event-producer.sh &> /dev/null &
-
 docker rm -f $(docker ps -aq --filter="name=datadog" --filter="status=running") &> /dev/null || :
 
 printf "processing [0 / sec]"

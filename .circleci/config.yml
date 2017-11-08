@@ -39,6 +39,54 @@ jobs:
           paths:
             - target/datadog_mock
 
+  performance:
+    docker:
+      - image: samueldebruyn/debian-git
+        environment:
+          - LANG: C.UTF-8
+          - MESSAGE: "deploys.test.myservice:1|c"
+          - EACH: ".0001"
+
+    working_directory: /app
+    steps:
+      - attach_workspace:
+          at: /go/src/github.com/jancajthaml
+
+      - checkout
+
+      - run:
+          name: Start perf tests
+          command: |
+            cp -r /go/src/github.com/jancajthaml/target/datadog_mock /app/server
+
+            duration=10
+
+            echo "will stream UDP event to server for $duration seconds"
+
+            spawn_producer() {
+              (./dev/event-producer.sh &> /dev/null) & sleep $duration
+              kill $! &> /dev/null || :
+            }
+
+            spawn_server() {
+              (/app/server &> log.txt) & sleep $(( $duration + 2 ))
+              kill $! &> /dev/null || :
+            }
+
+            calculate_results() {
+              lines=$(wc -l log.txt | awk '{print $1}')
+              average=$(($lines / $duration))
+              echo "throughput $average / sec"
+            }
+
+            trap 'exit 0' INT TERM
+
+            for i in $(seq 1 8); do
+              spawn_producer &
+            done
+            spawn_server &&
+            calculate_results
+
   deploy:
     docker:
       - image: docker:17.09.0-ce-git
@@ -54,6 +102,11 @@ jobs:
       - setup_remote_docker
 
       - run:
+          name: Install Dependencies
+          command: |
+            apk --no-cache add curl
+
+      - run:
           name: Build application Docker image
           command: |
             cp -r /go/src/github.com/jancajthaml/target /app/target
@@ -65,12 +118,18 @@ jobs:
       - deploy:
           name: Push image to DockerHUB
           command: |
-            docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
-
+            echo ${DOCKER_PASSWORD}| docker login -u ${DOCKER_USER} --password-stdin
             if git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$"; then
               VERSION=$(git tag | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$" | sort -t. -k 1,1n -k 2,2n -k 3,3n | tail -1)
             else
-              VERSION="snapshot.${CIRCLE_SHA1}"
+              parse_git_branch() {
+                branch=$(git rev-parse --abbrev-ref HEAD 2> /dev/null)
+                if [ -z "$branch" ]; then
+                  branch="snapshot.${CIRCLE_SHA1}"
+                fi
+                echo ${branch##*/}
+              }
+              VERSION="$(parse_git_branch)"
             fi
 
             docker tag bundle "jancajthaml/datadog_mock:${VERSION}"
@@ -79,14 +138,16 @@ jobs:
       - deploy:
           name: Notifying microbadger to update badges
           command: |
-            apk --no-cache add curl
             curl -X POST https://hooks.microbadger.com/images/jancajthaml/datadog_mock/${MICROBADGER_TOKEN}
 
 workflows:
   version: 2
-  test_and_deploy:
+  validate_and_publish:
     jobs:
       - test
       - deploy:
+          requires:
+            - test
+      - performance:
           requires:
             - test
