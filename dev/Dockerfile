@@ -18,6 +18,6 @@ MAINTAINER Jan Cajthaml <jan.cajthaml@gmail.com>
 
 RUN apk add --no-cache bash git openssh
 
-RUN GOOS=darwin GOARCH=amd64 go install -v std
+RUN GOOS=linux GOARCH=amd64 go install -v std
 
 RUN go get -u github.com/kardianos/govendor

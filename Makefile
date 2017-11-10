@@ -4,7 +4,7 @@ CORES := $$(getconf _NPROCESSORS_ONLN)
 all: install test run
 
 .PHONY: install
-install: prepare-dev lint bundle
+install: prepare-dev lint sync fmt bundle
 
 .PHONY: clean
 clean:
@@ -14,6 +14,22 @@ clean:
 .PHONY: perf
 perf:
 	@./dev/siege.sh
+
+.PHONY: build-fmt
+build-fmt:
+	docker-compose build fmt
+
+.PHONY: build-sync
+build-sync:
+	docker-compose build sync
+
+.PHONY: build-test
+build-test:
+	docker-compose build test
+
+.PHONY: build-package
+build-package:
+	docker-compose build package
 
 .PHONY: fmt
 fmt:
@@ -30,7 +46,7 @@ lint:
 .PHONY: prepare-dev
 prepare-dev:
 	docker-compose build dev
-	$(MAKE) -j $(CORES) fmt sync lint & wait
+	$(MAKE) -j $(CORES) build-fmt build-sync build-test build-package
 
 .PHONY: test
 test:
