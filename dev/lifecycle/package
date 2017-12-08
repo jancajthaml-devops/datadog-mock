@@ -7,7 +7,7 @@ trap exit INT TERM
 
 printf "[info] cleaning\n"
 
-rm -rf /go/src/github.com/jancajthaml/target/* &> /dev/null || :
+rm -rf /go/src/shadow/jancajthaml/pkg/* &> /dev/null || :
 
 printf "[info] building\n"
 
@@ -15,6 +15,6 @@ cd /go/src/datadog-mock
 
 go clean
 
-CGO_ENABLED=0 GOOS=${GOOS} go build -a -installsuffix cgo -o /go/src/github.com/jancajthaml/target/datadog_mock
+CGO_ENABLED=0 GOOS=${GOOS} go build -a -installsuffix cgo -o /go/src/shadow/jancajthaml/pkg/datadog_mock
 
 printf "[info] done, built sparrow/datadog_mock\n"

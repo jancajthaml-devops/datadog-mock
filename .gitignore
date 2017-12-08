@@ -1,3 +1,4 @@
 target
 vendor/github.com
 vendor/golang.org
+log.txt

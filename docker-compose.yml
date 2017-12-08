@@ -7,11 +7,11 @@ services:
     build: dev
     volumes:
       - ./dev/lifecycle:/opt/lifecycle
-      - .:/go/src/github.com/jancajthaml
-      - ./vendor/github.com/ScottMansfield:/go/src/github.com/ScottMansfield
+      - .:/go/src/shadow/jancajthaml
+      - ./vendor/github.com:/go/src/github.com
       - ./vendor/golang.org:/go/src/golang.org
       - ./src/datadog-mock:/go/src/datadog-mock
-    working_dir: /go/src/github.com/jancajthaml
+    working_dir: /go/src/shadow/jancajthaml
     environment:
       - GOOS
       - GOARCH

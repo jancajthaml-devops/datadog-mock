@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -eo pipefail
-
 exec 3>&1 4>&2
 
 post_stop() {

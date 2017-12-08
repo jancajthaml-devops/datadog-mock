@@ -23,7 +23,7 @@ LABEL version=$VERSION
 LABEL description="DataDog mock server"
 LABEL source=$SOURCE
 
-COPY target/datadog_mock /datadog_mock
+COPY pkg/datadog_mock /datadog_mock
 
 EXPOSE 8125/UDP
 
