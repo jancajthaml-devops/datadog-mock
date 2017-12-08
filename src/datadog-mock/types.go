@@ -18,5 +18,5 @@ type sink struct {
 	event chan []byte
 }
 
-// BufferSize is upper boundary of UDP recieve window
+// BufferSize is upper boundary of UDP receive window
 const BufferSize int = 1024
