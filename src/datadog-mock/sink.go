@@ -21,12 +21,14 @@ import (
 )
 
 // NewSink creates new UDP sink with channel for complete events
-func NewSink() *sink {
-	return &sink{event: make(chan []byte)}
+func NewSink() Sink {
+	return Sink{
+		event: make(chan []byte),
+	}
 }
 
 // Run starts UDP sink with UPD stream source
-func (r *sink) Run(addr *net.UDPAddr) {
+func (r *Sink) Run(addr *net.UDPAddr) {
 	inputStreamConn, err := net.ListenUDP("udp", addr)
 
 	if err != nil {
@@ -38,14 +40,12 @@ func (r *sink) Run(addr *net.UDPAddr) {
 
 	buf := make([]byte, BufferSize)
 
-forever:
-	n, _, err := inputStreamConn.ReadFromUDP(buf)
-	if err != nil {
-		fmt.Println(err)
-		goto forever
+	for {
+		n, _, err := inputStreamConn.ReadFromUDP(buf)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		r.event <- buf[0:n]
 	}
-
-	r.event <- buf[0:n]
-
-	goto forever
 }

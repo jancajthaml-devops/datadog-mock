@@ -1,0 +1,17 @@
+#!/bin/bash
+
+set -eo pipefail
+trap exit INT TERM
+
+####
+
+cd /go/src/jancajthaml/datadog-mock
+
+GO111MODULE=on \
+  go mod verify
+
+GO111MODULE=on \
+  go mod tidy
+
+GO111MODULE=on \
+  go mod vendor

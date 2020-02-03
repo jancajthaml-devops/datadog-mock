@@ -7,8 +7,8 @@ trap exit INT TERM
 
 printf "[info] starting tests\n"
 
-cd /go/src/datadog-mock
+cd /go/src/jancajthaml/datadog-mock
 
-go test -v ./...
+CGO_ENABLED=0 go test -v ./...
 
 printf "[info] done\n"

@@ -14,9 +14,9 @@ echo "[info] sending \"${MESSAGE}\" every ${EACH}sec"
 
 ####
 
-while true; do
-  echo $MESSAGE > /dev/udp/127.0.0.1/8125
-  sleep $EACH
+while true ; do
+  echo "${MESSAGE}" > /dev/udp/127.0.0.1/8125
+  sleep "${EACH}"
 done
 
 ####

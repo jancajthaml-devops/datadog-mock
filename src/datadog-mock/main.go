@@ -33,7 +33,7 @@ func main() {
 	relay := NewSink()
 	go relay.Run(stream)
 
-forever:
-	go processEvent(<-relay.event)
-	goto forever
+	for {
+		go processEvent(<-relay.event)
+	}
 }

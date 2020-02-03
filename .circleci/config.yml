@@ -3,41 +3,40 @@ version: 2
 jobs:
   test:
     docker:
-      - image: circleci/golang:1.9
+      - image: circleci/golang:1.13
         environment:
           - LANG: C.UTF-8
+          - CGO_ENABLED: 0
+          - GO111MODULE: "on"
+          - GOOS: linux
+          - GOARCH: amd64
 
     working_directory: /go/src/jancajthaml
     steps:
       - checkout
-
       - run:
           name: Sync dependencies
           command: |
-            go get -u github.com/kardianos/govendor \
-                      golang.org/x/tools/cmd/cover \
-                      github.com/mattn/goveralls
-            govendor sync -v
-
+            go get -u golang.org/x/tools/cmd/cover github.com/mattn/goveralls
       - run:
           name: Run tests
           command: |
             cd /go/src/jancajthaml/src/datadog-mock
             : > /go/src/jancajthaml/coverage.txt
-            go test -v -cover -race -coverprofile=/go/src/jancajthaml/coverage.txt -covermode=atomic ./...
+            go test -v -cover -coverprofile=/go/src/jancajthaml/coverage.txt -covermode=atomic ./...
             goveralls -coverprofile=/go/src/jancajthaml/coverage.txt -service=circle-ci -repotoken=$COVERALLS_TOKEN
-
       - run:
           name: Build server
           command: |
             cd /go/src/jancajthaml/src/datadog-mock
-            go clean
-            CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /go/src/github.com/jancajthaml/target/datadog_mock
-
-      - persist_to_workspace: 
-          root: /go/src/github.com/jancajthaml
+            go mod verify
+            go mod tidy
+            go mod vendor
+            go build -a -o /go/src/jancajthaml/pkg/datadog_mock
+      - persist_to_workspace:
+          root: /go/src/jancajthaml
           paths:
-            - target/datadog_mock
+            - pkg/datadog_mock
 
   performance:
     docker:
@@ -46,44 +45,48 @@ jobs:
           - LANG: C.UTF-8
           - MESSAGE: "deploys.test.myservice:1|c"
           - EACH: ".0001"
-
     working_directory: /app
     steps:
       - attach_workspace:
-          at: /go/src/github.com/jancajthaml
-
+          at: /go/src/jancajthaml
       - checkout
-
       - run:
           name: Start perf tests
           command: |
-            cp -r /go/src/github.com/jancajthaml/target/datadog_mock /app/server
+            cp -r /go/src/jancajthaml/pkg/datadog_mock /app/server
 
             duration=10
 
-            echo "will stream UDP event to server for $duration seconds"
+            echo "will stream UDP event to server for ${duration} seconds"
 
             spawn_producer() {
-              (./dev/event-producer.sh &> /dev/null) & sleep $duration
+              (./dev/event-producer.sh &> /dev/null) & sleep ${duration}
               kill $! &> /dev/null || :
             }
 
             spawn_server() {
-              (/app/server &> log.txt) & sleep $(( $duration + 2 ))
+              (/app/server &> log.txt) & sleep $(( ${duration} + 2 ))
               kill $! &> /dev/null || :
             }
 
             calculate_results() {
               lines=$(wc -l log.txt | awk '{print $1}')
               average=$(($lines / $duration))
-              echo "throughput $average / sec"
+              accepted_throughput=2000
+              if [ "${average}" -lt "${accepted_throughput}" ] ; then
+                echo "did not met throughput (/s) criterial with only ${average} out of acceptable ${accepted_throughput}"
+                exit 1
+              fi
+
+              echo "throughput ${average} / sec"
             }
 
             trap 'exit 0' INT TERM
 
-            for i in $(seq 1 8); do
+            for i in $(seq 1 8) ; do
               spawn_producer &
             done
+            \
             spawn_server &&
             calculate_results
 
@@ -96,25 +99,21 @@ jobs:
     working_directory: /app
     steps:
       - attach_workspace:
-          at: /go/src/github.com/jancajthaml
-
+          at: /go/src/jancajthaml
       - checkout
       - setup_remote_docker
-
       - run:
           name: Install Dependencies
           command: |
             apk --no-cache add curl
-
       - run:
           name: Build application Docker image
           command: |
-            cp -r /go/src/github.com/jancajthaml/target /app/target
+            cp -r /go/src/jancajthaml/pkg /app/pkg
             docker build \
               --build-arg VERSION=$(git tag | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$" | sort -t. -k 1,1n -k 2,2n -k 3,3n | tail -1) \
               --build-arg SOURCE=$(git config --get remote.origin.url) \
               -t bundle .
-
       - deploy:
           name: Push image to DockerHUB
           command: |
@@ -151,7 +150,7 @@ jobs:
       - deploy:
           name: Lazily update docker badge
           command: |
-            if git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$"; then
+            if git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$" ; then
               curl -X POST https://hooks.microbadger.com/images/jancajthaml/datadog_mock/${MICROBADGER_TOKEN}
             fi
 
@@ -160,9 +159,10 @@ workflows:
   validate_and_publish:
     jobs:
       - test
-      - deploy:
-          requires:
-            - test
       - performance:
           requires:
+            - test
+      - deploy:
+          requires:
+            - performance
             - test

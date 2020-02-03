@@ -6,15 +6,10 @@ services:
     image: datadog/dev:base
     build: dev
     volumes:
-      - ./dev/lifecycle:/opt/lifecycle
-      - .:/go/src/shadow/jancajthaml
-      - ./vendor/github.com:/go/src/github.com
-      - ./vendor/golang.org:/go/src/golang.org
-      - ./src/datadog-mock:/go/src/datadog-mock
-    working_dir: /go/src/shadow/jancajthaml
+      - .:/opt/project
+      - ./src/datadog-mock:/go/src/jancajthaml/datadog-mock
+    working_dir: /go/src/jancajthaml/datadog-mock
     environment:
-      - GOOS
-      - GOARCH
       - GOPATH=/go
     entrypoint: /bin/sh
     privileged: true
@@ -22,8 +17,7 @@ services:
   sync:
     extends: dev
     image: datadog/dev:sync
-    entrypoint: govendor
-    command: ["sync", "-v"]
+    entrypoint: ["/opt/project/dev/lifecycle/sync"]
 
   fmt:
     extends: dev
@@ -40,18 +34,16 @@ services:
   package:
     extends: dev
     image: datadog/dev:package
-    entrypoint: ["/opt/lifecycle/package"]
+    entrypoint: ["/opt/project/dev/lifecycle/package"]
 
   test:
     extends: dev
     image: datadog/dev:sync
-    entrypoint: ["/opt/lifecycle/test"]
+    entrypoint: ["/opt/project/dev/lifecycle/test"]
 
   artefact:
     restart: unless-stopped
     image: datadog/mock:latest
-    logging:
-      driver: none
     build:
       context: .
       dockerfile: Dockerfile

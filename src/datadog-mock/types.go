@@ -14,7 +14,7 @@
 
 package main
 
-type sink struct {
+type Sink struct {
 	event chan []byte
 }
 

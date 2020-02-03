@@ -12,12 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM library/golang:1.9.2-alpine
+FROM library/golang:1.13-alpine
 
 MAINTAINER Jan Cajthaml <jan.cajthaml@gmail.com>
 
 RUN apk add --no-cache bash git openssh
-
-RUN GOOS=linux GOARCH=amd64 go install -v std
-
-RUN go get -u github.com/kardianos/govendor

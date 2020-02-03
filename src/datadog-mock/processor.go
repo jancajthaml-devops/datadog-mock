@@ -15,19 +15,10 @@
 package main
 
 import (
-	"os"
+	"fmt"
 	"regexp"
 	"strings"
-
-	"github.com/ScottMansfield/nanolog"
 )
-
-var h nanolog.Handle
-
-func init() {
-	nanolog.SetWriter(os.Stdout)
-	h = nanolog.AddLogger("%s")
-}
 
 var pattern = regexp.MustCompile(`(?P<name>.*?):(?P<value>.*?)\|(?P<type>[a-z])(?:\|#(?P<tags>.*))?`)
 
@@ -36,9 +27,9 @@ func processEvent(event []byte) {
 	match := pattern.FindStringSubmatch(parsed)
 
 	if len(match) < 3 {
+		fmt.Println("Invalid event", parsed)
 		return
 	}
 
-	nanolog.Log(h, strings.TrimSuffix(parsed, "\n")+"\r\n")
-	nanolog.Flush()
+	fmt.Println(strings.TrimSuffix(parsed, "\n"))
 }
