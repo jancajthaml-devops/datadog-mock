@@ -15,21 +15,49 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
 )
 
+// types c|g|ms suffix (count, gauce, timer)
 var pattern = regexp.MustCompile(`(?P<name>.*?):(?P<value>.*?)\|(?P<type>[a-z])(?:\|#(?P<tags>.*))?`)
+
+type Processor struct {
+	in <-chan []byte
+}
+
+func NewProcessor(in <-chan []byte) Processor {
+	return Processor{
+		in: in,
+	}
+}
+
+func (r *Processor) ProcessEvents() {
+	for {
+		select {
+		case event := <-r.in:
+			if len(event) == 0 {
+				return
+			}
+			processEvent(event)
+		default:
+		}
+	}
+}
+
+func (r *Processor) Run(ctx context.Context) {
+	go r.ProcessEvents()
+	<-ctx.Done()
+}
 
 func processEvent(event []byte) {
 	parsed := string(event)
 	match := pattern.FindStringSubmatch(parsed)
-
 	if len(match) < 3 {
 		fmt.Println("Invalid event", parsed)
 		return
 	}
-
 	fmt.Println(strings.TrimSuffix(parsed, "\n"))
 }

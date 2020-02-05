@@ -5,16 +5,8 @@ trap exit INT TERM
 
 ####
 
-printf "[info] cleaning\n"
-
 (rm -rf /opt/project/pkg/* &> /dev/null || :)
-
-printf "[info] building\n"
 
 cd /go/src/jancajthaml/datadog-mock
 
-CGO_ENABLED=0 \
-GOOS=linux \
-go build -a -o /opt/project/pkg/datadog_mock
-
-printf "[info] done, built jancajthaml/datadog_mock\n"
+CGO_ENABLED=0 GOOS=linux go build -a -o /opt/project/pkg/datadog_mock

@@ -15,37 +15,67 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
+	"strings"
+	"syscall"
 )
 
+type Sink struct {
+	out chan<- []byte
+}
+
 // NewSink creates new UDP sink with channel for complete events
-func NewSink() Sink {
+func NewSink(out chan<- []byte) Sink {
 	return Sink{
-		event: make(chan []byte),
+		out: out,
+	}
+}
+
+func (r *Sink) ReadFromUDP(conn *net.UDPConn) {
+	buf := make([]byte, 0xffff)
+	for {
+		n, _, err := conn.ReadFromUDP(buf)
+		switch {
+		case (n == 0 && err == nil):
+			return
+		case err != nil && strings.Contains(err.Error(), "use of closed network connection"):
+			return
+		case err == syscall.EAGAIN || err == syscall.EWOULDBLOCK:
+			continue
+		case n == 0:
+			continue
+		case err != nil:
+			fmt.Println(err)
+			continue
+		default:
+		}
+		var result = make([]byte, n)
+		copy(result, buf[0:n])
+		r.out <- result
 	}
 }
 
 // Run starts UDP sink with UPD stream source
-func (r *Sink) Run(addr *net.UDPAddr) {
-	inputStreamConn, err := net.ListenUDP("udp", addr)
+func (r *Sink) Run(ctx context.Context) {
+	addr, err := net.ResolveUDPAddr("udp", ":8125")
 
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	defer inputStreamConn.Close()
-
-	buf := make([]byte, BufferSize)
-
-	for {
-		n, _, err := inputStreamConn.ReadFromUDP(buf)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		r.event <- buf[0:n]
+	conn, err := net.ListenUDP("udp", addr)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
+
+	defer conn.Close()
+
+	go r.ReadFromUDP(conn)
+
+	<-ctx.Done()
 }

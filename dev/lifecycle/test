@@ -5,10 +5,6 @@ trap exit INT TERM
 
 ####
 
-printf "[info] starting tests\n"
-
 cd /go/src/jancajthaml/datadog-mock
 
 CGO_ENABLED=0 go test -v ./...
-
-printf "[info] done\n"
